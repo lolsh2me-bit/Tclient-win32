@@ -15,6 +15,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build gcc-mingw-w64-i686 g++-mingw-w64-i686
           rustup target add i686-pc-windows-gnu
+      - name: Find SSP
+        run: |
+          i686-w64-mingw32-gcc -print-file-name=libssp.a
+          find /usr -name "libssp.a" -o -name "libssp.dll.a" 2>/dev/null | head -20
       - name: Configure
         run: |
           cmake -S . -B build-win32 -G Ninja \
