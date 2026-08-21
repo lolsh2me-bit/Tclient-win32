@@ -25,6 +25,7 @@ jobs:
           cmake -S . -B build-win32 -G Ninja \
             -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/mingw-i686.cmake \
             -DCMAKE_BUILD_TYPE=Release \
+            -DPATHS_SSP_LIBDIR=/usr/lib/gcc/i686-w64-mingw32/13-win32 \
             -DCLIENT=ON -DSERVER=OFF -DTOOLS=OFF \
             -DVIDEORECORDER=OFF -DVULKAN=OFF -DDISCORD=OFF \
             -DSTEAM=OFF -DUPNP=OFF -DAUTOUPDATE=OFF \
