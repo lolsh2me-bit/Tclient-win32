@@ -18,6 +18,7 @@ jobs:
       - name: Find SSP
         run: |
           i686-w64-mingw32-gcc -print-file-name=libssp.a
+          find /usr -iname 'libssp*' 2>/dev/null | head -50
           find /usr -name "libssp.a" -o -name "libssp.dll.a" 2>/dev/null | head -20
       - name: Configure
         run: |
