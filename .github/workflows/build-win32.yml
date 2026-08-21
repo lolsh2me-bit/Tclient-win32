@@ -25,7 +25,7 @@ jobs:
             -DVIDEORECORDER=OFF -DVULKAN=OFF -DDISCORD=OFF \
             -DSTEAM=OFF -DUPNP=OFF -DAUTOUPDATE=OFF \
             -DDOWNLOAD_GTEST=OFF -DTEST_MYSQL=OFF -DMYSQL=OFF \
-            -DPREFER_BUNDLED_LIBS=OFF
+            -DPREFER_BUNDLED_LIBS=ON
       - name: Build
         run: cmake --build build-win32 --target game-client -j2
       - name: Package
