@@ -361,10 +361,17 @@ int CControls::SnapInput(int *pData)
 	m_LastSendTime = time_get();
 
 	// TClient silent aim. Keep the local mouse/cursor and prediction target unchanged,
-	// but alter the target coordinates in the network input while the fire button is held.
+	// but alter the target coordinates only in the network input.
 	CNetObj_PlayerInput OutgoingInput = m_aInputData[g_Config.m_ClDummy];
+	const bool HasLocalCharacter = GameClient()->m_Snap.m_pLocalCharacter != nullptr;
+	const int LocalWeapon = HasLocalCharacter ? GameClient()->m_Snap.m_pLocalCharacter->m_Weapon : -1;
+	const bool FirePressed = (OutgoingInput.m_Fire & 1) != 0;
+	const bool HookPressed = OutgoingInput.m_Hook != 0;
+	const bool AimForWeapon = FirePressed && (LocalWeapon != WEAPON_HAMMER || g_Config.m_TcSilentAimHammer);
+	const bool AimForHook = HookPressed && g_Config.m_TcSilentAimHook;
+
 	if(g_Config.m_TcSilentAim && !g_Config.m_ClDummy && !GameClient()->m_Snap.m_SpecInfo.m_Active &&
-		GameClient()->m_Snap.m_pLocalCharacter && (OutgoingInput.m_Fire & 1))
+		HasLocalCharacter && (AimForWeapon || AimForHook))
 	{
 		const vec2 LocalPos = GameClient()->m_LocalCharacterPos;
 		vec2 AimDirection((float)OutgoingInput.m_TargetX, (float)OutgoingInput.m_TargetY);
@@ -394,7 +401,7 @@ int CControls::SnapInput(int *pData)
 			const auto &Character = GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur;
 			const vec2 ToTarget = vec2((float)Character.m_X, (float)Character.m_Y) - LocalPos;
 			const float TargetDistance = length(ToTarget);
-			if(TargetDistance < 0.001f || (g_Config.m_TcSilentAimMaxDistance > 0 && TargetDistance > g_Config.m_TcSilentAimMaxDistance))
+			if(TargetDistance < 0.001f)
 				continue;
 
 			const float AimDot = dot(AimDirection, ToTarget / TargetDistance);
@@ -466,6 +473,47 @@ void CControls::OnRender()
 	else
 	{
 		m_aTargetPos[g_Config.m_ClDummy] = m_aMousePos[g_Config.m_ClDummy];
+	}
+
+	// Visualize the angular FOV used by silent aim. The cone is only a HUD aid;
+	// target acquisition itself has no distance limit.
+	if(g_Config.m_TcSilentAim && g_Config.m_TcSilentAimShowFov && !g_Config.m_ClDummy &&
+		!GameClient()->m_Snap.m_SpecInfo.m_Active && GameClient()->m_Snap.m_pLocalCharacter)
+	{
+		const vec2 LocalPos = GameClient()->m_LocalCharacterPos;
+		vec2 AimDirection((float)m_aInputData[g_Config.m_ClDummy].m_TargetX, (float)m_aInputData[g_Config.m_ClDummy].m_TargetY);
+		if(length(AimDirection) < 0.001f)
+			AimDirection = vec2(1.0f, 0.0f);
+
+		const float AimAngle = std::atan2(AimDirection.y, AimDirection.x);
+		const float HalfFov = (g_Config.m_TcSilentAimFov * 0.5f) * (pi / 180.0f);
+		const float Radius = 420.0f;
+		const vec2 LeftDir(std::cos(AimAngle - HalfFov), std::sin(AimAngle - HalfFov));
+		const vec2 RightDir(std::cos(AimAngle + HalfFov), std::sin(AimAngle + HalfFov));
+
+		Graphics()->TextureClear();
+		Graphics()->LinesBegin();
+		Graphics()->SetColor(ColorRGBA(1.0f, 1.0f, 1.0f, 0.45f));
+		IEngineGraphics::CLineItem aBoundaryLines[2] = {
+			{LocalPos.x, LocalPos.y, LocalPos.x + LeftDir.x * Radius, LocalPos.y + LeftDir.y * Radius},
+			{LocalPos.x, LocalPos.y, LocalPos.x + RightDir.x * Radius, LocalPos.y + RightDir.y * Radius},
+		};
+		Graphics()->LinesDraw(aBoundaryLines, std::size(aBoundaryLines));
+
+		constexpr int ArcSegments = 32;
+		IEngineGraphics::CLineItem aArc[ArcSegments];
+		for(int i = 0; i < ArcSegments; ++i)
+		{
+			const float T0 = (float)i / ArcSegments;
+			const float T1 = (float)(i + 1) / ArcSegments;
+			const float A0 = AimAngle - HalfFov + (2.0f * HalfFov) * T0;
+			const float A1 = AimAngle - HalfFov + (2.0f * HalfFov) * T1;
+			aArc[i] = {
+				LocalPos.x + std::cos(A0) * Radius, LocalPos.y + std::sin(A0) * Radius,
+				LocalPos.x + std::cos(A1) * Radius, LocalPos.y + std::sin(A1) * Radius};
+		}
+		Graphics()->LinesDraw(aArc, std::size(aArc));
+		Graphics()->LinesEnd();
 	}
 }
 

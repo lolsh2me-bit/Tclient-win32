@@ -35,8 +35,10 @@ MACRO_CONFIG_INT(TcScaleMouseDistance, tc_scale_mouse_distance, 0, 0, 1, CFGFLAG
 // Silent aim: only changes the target sent to the server while firing; the local cursor stays untouched.
 MACRO_CONFIG_INT(TcSilentAim, tc_silent_aim, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Silently redirect shots toward the best target inside the FOV")
 MACRO_CONFIG_INT(TcSilentAimFov, tc_silent_aim_fov, 90, 1, 360, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Silent aim field of view in degrees")
-MACRO_CONFIG_INT(TcSilentAimMaxDistance, tc_silent_aim_max_distance, 1200, 0, 10000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Maximum silent aim target distance in game units (0 = unlimited)")
 MACRO_CONFIG_INT(TcSilentAimIgnoreTeam, tc_silent_aim_ignore_team, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Ignore players on the same vanilla team")
+MACRO_CONFIG_INT(TcSilentAimHook, tc_silent_aim_hook, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply silent aim while hooking")
+MACRO_CONFIG_INT(TcSilentAimHammer, tc_silent_aim_hammer, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply silent aim to hammer attacks")
+MACRO_CONFIG_INT(TcSilentAimShowFov, tc_silent_aim_show_fov, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show silent aim FOV cone")
 
 MACRO_CONFIG_INT(TcHammerRotatesWithCursor, tc_hammer_rotates_with_cursor, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Allow your hammer to rotate like other weapons")
 
