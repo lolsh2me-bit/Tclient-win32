@@ -28,6 +28,13 @@ jobs:
             -DPREFER_BUNDLED_LIBS=ON
       - name: Build
         run: cmake --build build-win32 --target game-client -j2
+      - name: Check Win7 imports
+        run: |
+          find build-win32 -type f \( -iname '*.exe' -o -iname '*.dll' \) -exec sh -c '
+            if i686-w64-mingw32-objdump -p "$1" 2>/dev/null | grep -qi "GetSystemTimePreciseAsFileTime"; then
+              echo "FOUND IN: $1"
+            fi
+          ' _ {} \;
       - name: Package
         run: |
           mkdir -p artifact
