@@ -15,26 +15,17 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build gcc-mingw-w64-i686 g++-mingw-w64-i686
           rustup target add i686-pc-windows-gnu
-      - name: Find SSP
-        run: |
-          i686-w64-mingw32-gcc -print-file-name=libssp.a
-          find /usr -iname 'libssp*' 2>/dev/null | head -50
-          find /usr -name "libssp.a" -o -name "libssp.dll.a" 2>/dev/null | head -20
-      - name: Prepare SSP
-        run: |
-          mkdir -p ddnet-libs/ssp/windows/lib32
-          cp "$(dirname "$(i686-w64-mingw32-gcc -print-file-name=libssp.a)")/libssp-0.dll" ddnet-libs/ssp/windows/lib32/libssp-0.dll
       - name: Configure
         run: |
           cmake -S . -B build-win32 -G Ninja \
             -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/mingw-i686.cmake \
             -DCMAKE_BUILD_TYPE=Release \
-            -DPATHS_SSP_LIBDIR=/usr/lib/gcc/i686-w64-mingw32/13-win32 \
+            -DSECURITY_COMPILER_FLAGS=OFF \
             -DCLIENT=ON -DSERVER=OFF -DTOOLS=OFF \
             -DVIDEORECORDER=OFF -DVULKAN=OFF -DDISCORD=OFF \
             -DSTEAM=OFF -DUPNP=OFF -DAUTOUPDATE=OFF \
             -DDOWNLOAD_GTEST=OFF -DTEST_MYSQL=OFF -DMYSQL=OFF \
-            -DPREFER_BUNDLED_LIBS=ON
+            -DPREFER_BUNDLED_LIBS=OFF
       - name: Build
         run: cmake --build build-win32 --target game-client -j2
       - name: Package
