@@ -1,0 +1,39 @@
+name: Build Win32 x86
+on:
+  workflow_dispatch:
+  push:
+    branches: [ win32-build ]
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Install x86 cross toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build gcc-mingw-w64-i686 g++-mingw-w64-i686
+          rustup target add i686-pc-windows-gnu
+      - name: Configure
+        run: |
+          cmake -S . -B build-win32 -G Ninja \
+            -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/mingw-i686.cmake \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCLIENT=ON -DSERVER=OFF -DTOOLS=OFF \
+            -DVIDEORECORDER=OFF -DVULKAN=OFF -DDISCORD=OFF \
+            -DSTEAM=OFF -DUPNP=OFF -DAUTOUPDATE=OFF \
+            -DDOWNLOAD_GTEST=OFF -DTEST_MYSQL=OFF -DMYSQL=OFF \
+            -DPREFER_BUNDLED_LIBS=ON
+      - name: Build
+        run: cmake --build build-win32 --target game-client -j2
+      - name: Package
+        run: |
+          mkdir -p artifact
+          find build-win32 -maxdepth 2 -type f \( -iname '*.exe' -o -iname '*.dll' \) -exec cp -f {} artifact/ \; || true
+          cp -r data artifact/data
+          cd artifact && zip -9 -r ../TClient-10.8.7-win32-x86.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: TClient-10.8.7-win32-x86
+          path: TClient-10.8.7-win32-x86.zip

@@ -1,0 +1,4 @@
+Prepared for TClient 10.8.7 / Windows 32-bit x86.
+Bundled ddnet-libs is populated, including windows/lib32.
+Build requires MinGW i686 and Rust target i686-pc-windows-gnu.
+Disabled for lighter/cleaner build: server, tools, video recorder, Vulkan, Discord, Steam, UPNP, autoupdate, tests/MySQL.
