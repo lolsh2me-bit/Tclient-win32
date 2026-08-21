@@ -20,6 +20,10 @@ jobs:
           i686-w64-mingw32-gcc -print-file-name=libssp.a
           find /usr -iname 'libssp*' 2>/dev/null | head -50
           find /usr -name "libssp.a" -o -name "libssp.dll.a" 2>/dev/null | head -20
+      - name: Prepare SSP
+        run: |
+          mkdir -p ddnet-libs/ssp/windows/lib32
+          cp "$(dirname "$(i686-w64-mingw32-gcc -print-file-name=libssp.a)")/libssp-0.dll" ddnet-libs/ssp/windows/lib32/libssp-0.dll
       - name: Configure
         run: |
           cmake -S . -B build-win32 -G Ninja \
