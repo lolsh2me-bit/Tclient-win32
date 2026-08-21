@@ -359,7 +359,67 @@ int CControls::SnapInput(int *pData)
 		return 0;
 
 	m_LastSendTime = time_get();
-	mem_copy(pData, &m_aInputData[g_Config.m_ClDummy], sizeof(m_aInputData[0]));
+
+	// TClient silent aim. Keep the local mouse/cursor and prediction target unchanged,
+	// but alter the target coordinates in the network input while the fire button is held.
+	CNetObj_PlayerInput OutgoingInput = m_aInputData[g_Config.m_ClDummy];
+	if(g_Config.m_TcSilentAim && !g_Config.m_ClDummy && !GameClient()->m_Snap.m_SpecInfo.m_Active &&
+		GameClient()->m_Snap.m_pLocalCharacter && (OutgoingInput.m_Fire & 1))
+	{
+		const vec2 LocalPos = GameClient()->m_LocalCharacterPos;
+		vec2 AimDirection((float)OutgoingInput.m_TargetX, (float)OutgoingInput.m_TargetY);
+		if(length(AimDirection) < 0.001f)
+			AimDirection = vec2(1.0f, 0.0f);
+		AimDirection = normalize(AimDirection);
+
+		const float HalfFovRadians = (g_Config.m_TcSilentAimFov * 0.5f) * (pi / 180.0f);
+		const float MinAimDot = std::cos(HalfFovRadians);
+		float BestDot = -2.0f;
+		float BestDistance = 1e30f;
+		vec2 BestTarget(0.0f, 0.0f);
+		bool FoundTarget = false;
+
+		const int LocalClientId = GameClient()->m_Snap.m_LocalClientId;
+		const CNetObj_PlayerInfo *pLocalInfo = LocalClientId >= 0 ? GameClient()->m_Snap.m_apPlayerInfos[LocalClientId] : nullptr;
+
+		for(int ClientId = 0; ClientId < MAX_CLIENTS; ++ClientId)
+		{
+			if(ClientId == LocalClientId || !GameClient()->m_Snap.m_aCharacters[ClientId].m_Active)
+				continue;
+
+			if(g_Config.m_TcSilentAimIgnoreTeam && pLocalInfo && GameClient()->m_Snap.m_apPlayerInfos[ClientId] &&
+				pLocalInfo->m_Team == GameClient()->m_Snap.m_apPlayerInfos[ClientId]->m_Team)
+				continue;
+
+			const auto &Character = GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur;
+			const vec2 ToTarget = vec2((float)Character.m_X, (float)Character.m_Y) - LocalPos;
+			const float TargetDistance = length(ToTarget);
+			if(TargetDistance < 0.001f || (g_Config.m_TcSilentAimMaxDistance > 0 && TargetDistance > g_Config.m_TcSilentAimMaxDistance))
+				continue;
+
+			const float AimDot = dot(AimDirection, ToTarget / TargetDistance);
+			if(AimDot < MinAimDot)
+				continue;
+
+			if(!FoundTarget || AimDot > BestDot + 0.0001f || (absolute(AimDot - BestDot) <= 0.0001f && TargetDistance < BestDistance))
+			{
+				FoundTarget = true;
+				BestDot = AimDot;
+				BestDistance = TargetDistance;
+				BestTarget = ToTarget;
+			}
+		}
+
+		if(FoundTarget)
+		{
+			OutgoingInput.m_TargetX = (int)BestTarget.x;
+			OutgoingInput.m_TargetY = (int)BestTarget.y;
+			if(!OutgoingInput.m_TargetX && !OutgoingInput.m_TargetY)
+				OutgoingInput.m_TargetX = 1;
+		}
+	}
+
+	mem_copy(pData, &OutgoingInput, sizeof(OutgoingInput));
 	return sizeof(m_aInputData[0]);
 }
 
